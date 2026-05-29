@@ -1,28 +1,27 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const axios = require("axios");
+const Groq = require("groq-sdk");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
 app.post("/api/chat", async (req, res) => {
   try {
     const { message } = req.body;
-    const response = await axios.post("https://api.anthropic.com/v1/messages", {
-      model: "claude-opus-4-5",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: message }]
-    }, {
-      headers: {
-        "x-api-key": process.env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json"
-      }
+    const response = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        { role: "system", content: "You are Snehal Thombare's portfolio assistant. She is a CS student from Pune seeking internships. Projects: File Compression Tool (C++ Huffman), CP Analyzer, Market Predictor, AI Portfolio. Skills: C++, Python, React, Node.js. Keep answers to 2 sentences." },
+        { role: "user", content: message }
+      ]
     });
-    res.json({ reply: response.data.content[0].text });
+    res.json({ reply: response.choices[0].message.content });
   } catch (error) {
+    console.log("Error details:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
